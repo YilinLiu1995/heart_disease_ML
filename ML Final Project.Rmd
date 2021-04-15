@@ -1,0 +1,235 @@
+---
+title: "Machine Learning Final Project"
+author: "Yilin Liu"
+date: "4/13/2021"
+output: html_document
+---
+
+# libraries
+```{r}
+library(readr)
+library(corrplot)
+library(caret)
+library(ggplot2)
+```
+
+# original data
+```{r}
+data <- read.csv("heart.csv")
+head(data)
+str(data)
+```
+
+
+# Data Cleaning and transformation
+
+## factor the variables
+```{r}
+data$target= as.factor(data$target)
+data$sex= as.factor(data$sex)
+data$cp= as.factor(data$cp)
+data$fbs= as.factor(data$fbs)
+data$restecg= as.factor(data$restecg)
+data$exang= as.factor(data$exang)
+data$slope= as.factor(data$slope)
+data$ca= as.factor(data$ca)
+data$thal= as.factor(data$thal)
+```
+
+```{r}
+str(data)
+```
+
+
+## Imputing Missing/NA
+```{r}
+sum(is.na(data))
+```
+
+
+## Imputing Outliers - ignore
+
+## scale data /preprocess data - ignore this time
+
+# Exploraring data
+## correlation analysis
+```{r}
+
+```
+
+## stats summary
+```{r}
+summary(data)
+```
+
+## Linear plot
+```{r}
+
+```
+
+# Modeling
+
+## Decision Tree
+### Create a list of 80% of the rows in the Original dataset we can use for training
+```{r}
+index = createDataPartition(data[,1],p=0.80,list = FALSE)
+dim(index)
+```
+### Use 80% of the data to training the model.
+```{r}
+training = data[index,]
+dim(training)
+```
+
+```{r}
+valid = data[-index,]
+dim(valid)
+```
+### create test harnesses
+```{r}
+control <- trainControl(method="cv", number=10)
+metric <- "Accuracy"
+```
+
+### Build a Decision Tree Model using rpart
+```{r}
+set.seed(7)
+fit.rpart <- train(target~., data = training, method="rpart", metric=metric, trControl=control)
+```
+
+### Summarize the Results Briefly
+```{r}
+fit.rpart
+```
+
+```{r}
+summary(fit.rpart$finalModel)
+```
+```{r}
+suppressMessages(library(rattle))
+fancyRpartPlot(fit.rpart$finalModel)
+```
+### Create Prediciton using Trained Decision Tree'
+```{r}
+data.pred = predict(fit.rpart, newdata = valid)
+table(data.pred, valid$target)
+```
+### error
+```{r}
+error.rate = round(mean(data.pred != valid$target,2))
+error.rate
+```
+### Confusion Matrix
+```{r}
+cm = confusionMatrix(as.factor(data.pred), reference = as.factor(valid$target), mode = "prec_recall")
+print(cm)
+```
+
+## Random Forest
+```{r}
+library(AppliedPredictiveModeling)
+```
+
+```{r}
+transparentTheme(trans = .13)
+featurePlot(x = data[, 1:13], 
+            y = data$target, 
+            plot = "pairs",
+            ## Add a key at the top
+            auto.key = list(columns = 2))
+```
+
+```{r}
+set.seed(7)
+fit.rf <- train(target~., data = training, method="rf", metric=metric, trControl=control)
+```
+
+```{r}
+fit.rf
+```
+```{r}
+summary(fit.rf$finalModel)
+```
+
+```{r}
+plot(fit.rf)
+```
+
+
+```{r}
+vi = varImp(fit.rf, scale = FALSE)
+plot(vi, top = ncol(training)-1)
+```
+
+### create prediciton using Trained random forest
+```{r}
+data.pred = predict(fit.rf, newdata = valid)
+table(data.pred, valid$target)
+```
+
+### check error
+```{r}
+error.rate = round(mean(data.pred != valid$target,2))
+error.rate
+```
+
+### Confusion Matrix
+```{r}
+cm = confusionMatrix(as.factor(data.pred), reference = as.factor(valid$target), mode = "prec_recall")
+print(cm)
+```
+## Random Forest Model using extra trees
+```{r}
+set.seed(7)
+fit.extraTrees <- train(target~., data = training, method="rf", metric=metric, trControl=control)
+```
+
+```{r}
+fit.extraTrees
+```
+
+```{r}
+summary(fit.extraTrees$finalModel)
+```
+
+```{r}
+plot(fit.extraTrees)
+```
+
+```{r}
+data.pred = predict(fit.extraTrees, newdata = valid)
+table(data.pred, valid$target)
+```
+
+```{r}
+error.rate = round(mean(data.pred != valid$target,2))
+error.rate
+```
+
+
+```{r}
+cm = confusionMatrix(as.factor(data.pred), reference = as.factor(valid$target), mode = "prec_recall")
+print(cm)
+```
+
+
+```{r}
+results = resamples(list(rf=fit.rf, extraTrees = fit.extraTrees))
+summary(results)
+```
+
+### visualize comparison
+```{r}
+dotplot(results)
+```
+
+
+## Logistic Regression
+```{r}
+
+```
+
+
+
+
+
