@@ -1,6 +1,6 @@
 ---
 title: "Machine Learning Final Project"
-author: "Yilin Liu"
+author: "Yilin Liu, Ding He"
 date: "4/13/2021"
 output: html_document
 ---
