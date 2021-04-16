@@ -232,6 +232,7 @@ dotplot(results)
 ```
 
 
+
 ## K-Means
 ```{r}
 profiling_num(data2)
