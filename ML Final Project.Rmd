@@ -1,8 +1,10 @@
 ---
 title: "Machine Learning Final Project"
 author: "Yilin Liu, Ding He"
-date: "4/13/2021"
+date: "`r Sys.Date()`"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 # libraries
@@ -228,6 +230,93 @@ dotplot(results)
 ```{r}
 
 ```
+
+
+
+## K-Means
+```{r}
+profiling_num(data2)
+
+
+uns_df <- scale(data2[,10:14])
+
+head(as_tibble(uns_df))
+
+
+distance <- get_dist(uns_df)
+head(distance)
+
+
+fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+
+
+k2 <- kmeans(uns_df, 
+             center = 2,
+             nstart = 25  )
+
+str(k2)
+k2
+
+
+fviz_cluster(k2, data = uns_df)
+```
+
+
+```{r}
+k3 <- kmeans(uns_df, centers = 3, nstart = 25)
+k4 <- kmeans(uns_df, centers = 4, nstart = 25)
+k5 <- kmeans(uns_df, centers = 5, nstart = 25)
+
+p1 <- fviz_cluster(k2, geom = "point", data = uns_df)+
+  ggtitle("k = 2")
+p2 <- fviz_cluster(k3, geom = "point", data = uns_df)+
+  ggtitle("k = 3")
+p3 <- fviz_cluster(k4, geom = "point", data = uns_df)+
+  ggtitle("k = 4")
+p4 <- fviz_cluster(k5, geom = "point", data = uns_df)+
+  ggtitle("k = 5")
+
+library(gridExtra)
+grid.arrange(p1,p2,p3,p2, nrow = 2)
+```
+
+
+###Optimum Cluster Number
+```{r}
+# Elbow Method
+set.seed(123)
+fviz_nbclust(uns_df, kmeans, method = "wss")
+
+# Average Silouette Method
+fviz_nbclust(uns_df, kmeans, method = "silhouette")
+
+
+# Gap Statistics
+set.seed(123)
+
+gap_stat <- clusGap(uns_df, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
+
+print(gap_stat, method = "firstmax")
+
+fviz_gap_stat
+
+
+set.seed(123)
+
+final <- kmeans(uns_df, 2, nstart = 25)
+final
+```
+
+
+###Descriptive Statistics for Clusters
+```{r}
+data2[,10:14] %>% 
+  mutate(Cluster = final$cluster) %>% 
+  group_by(Cluster) %>% 
+  summarise_all("mean")
+```
+
+
 
 
 
