@@ -17,6 +17,7 @@ library(ggplot2)
 
 # original data
 ```{r}
+#setwd("C:/Users/hedin/OneDrive/Documents/HU/ANLY530/final project/group project/heart_disease_ML")
 data <- read.csv("heart.csv")
 head(data)
 str(data)
@@ -107,6 +108,7 @@ fit.rpart
 ```{r}
 summary(fit.rpart$finalModel)
 ```
+
 ```{r}
 suppressMessages(library(rattle))
 fancyRpartPlot(fit.rpart$finalModel)
@@ -149,6 +151,7 @@ fit.rf <- train(target~., data = training, method="rf", metric=metric, trControl
 ```{r}
 fit.rf
 ```
+
 ```{r}
 summary(fit.rf$finalModel)
 ```
@@ -235,6 +238,26 @@ dotplot(results)
 
 ## K-Means
 ```{r}
+library(dplyr)
+data2 <- data %>% 
+  mutate(sex = if_else(sex == 1, "MALE", "FEMALE"),
+         fbs = if_else(fbs == 1, ">120", "<=120"),
+         exang = if_else(exang == 1, "YES" ,"NO"),
+         cp = if_else(cp == 1, "ATYPICAL ANGINA",
+                      if_else(cp == 2, "NON-ANGINAL PAIN", "ASYMPTOMATIC")),
+         restecg = if_else(restecg == 0, "NORMAL",
+                           if_else(restecg == 1, "ABNORMALITY", "PROBABLE OR DEFINITE")),
+         slope = as.factor(slope),
+         ca = as.factor(ca),
+         thal = as.factor(thal),
+         target = if_else(target == 1, "YES", "NO")
+         ) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  dplyr::select(target, sex, fbs, exang, cp, restecg, slope, ca, thal, everything())
+```
+
+```{r}
+library(funModeling)
 profiling_num(data2)
 
 
@@ -242,13 +265,9 @@ uns_df <- scale(data2[,10:14])
 
 head(as_tibble(uns_df))
 
-
-distance <- get_dist(uns_df)
-head(distance)
-
-
-fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
-
+#distance <- get_dist(uns_df)
+#head(distance)
+#fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
 
 k2 <- kmeans(uns_df, 
              center = 2,
@@ -256,8 +275,10 @@ k2 <- kmeans(uns_df,
 
 str(k2)
 k2
+k2$centers
+table(k2$cluster) #Give a count of data points in each cluster
 
-
+library(factoextra)
 fviz_cluster(k2, data = uns_df)
 ```
 
@@ -276,8 +297,12 @@ p3 <- fviz_cluster(k4, geom = "point", data = uns_df)+
 p4 <- fviz_cluster(k5, geom = "point", data = uns_df)+
   ggtitle("k = 5")
 
+p2
+p3
+p4
+
 library(gridExtra)
-grid.arrange(p1,p2,p3,p2, nrow = 2)
+grid.arrange(p1,p2,p3,p4, nrow = 2)
 ```
 
 
@@ -294,6 +319,7 @@ fviz_nbclust(uns_df, kmeans, method = "silhouette")
 # Gap Statistics
 set.seed(123)
 
+library(cluster)
 gap_stat <- clusGap(uns_df, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
 
 print(gap_stat, method = "firstmax")
@@ -310,13 +336,45 @@ final
 
 ###Descriptive Statistics for Clusters
 ```{r}
-data2[,10:14] %>% 
+df<-data2[,10:14] %>% 
   mutate(Cluster = final$cluster) %>% 
   group_by(Cluster) %>% 
   summarise_all("mean")
+df
 ```
 
 
+#Best K value
+```{r}
+wssplot <- function(df, nc=15, seed=1234){
+  wss <- (nrow(data2)-1)*sum(apply(data2,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data2, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")}
+
+library(base)
+data3 <- data.frame(lapply(data2, function(x) as.numeric(as.character(x))))
+df<-scale(data3[-1])
+head(df)
+wssplot(df)
+```
+
+
+#K-means analysis 
+#Start the k-Means analysis using the variable “nc” for the number of clusters
+```{r}
+library(NbClust)
+set.seed(1234)
+nc <- NbClust(df, min.nc=2, max.nc = 15, method = "kmeans")
+```
+
+
+#K-means analysis
+```{r}
+barplot(table(nc$Best.n[1,]), xlab = "Number of Clusters", ylab = "Number of Criteria", main = "Number of Clusters Chosen by 26 Criteria")
+```
 
 
 
