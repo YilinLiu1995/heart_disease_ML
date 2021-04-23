@@ -78,7 +78,7 @@ summary(data)
 index = createDataPartition(data[,1],p=0.80,list = FALSE)
 dim(index)
 ```
-### Use 80% of the data to training the model.
+### Use 80% of the data to train the model.
 ```{r}
 training = data[index,]
 dim(training)
